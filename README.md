@@ -1,1 +1,1 @@
-# Simple Task Manager
+# FullStack Task Management App

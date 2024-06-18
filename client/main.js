@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskInput = document.getElementById('task-input');
     const taskList = document.getElementById('task-list');
 
+    // Hard code a user ID for now to test API routes
+    const userId = 'test-user-id'; // will be replaced with dynamic handling after implementing user authentication 
 
     // Fetch tasks from the server
     fetchTasks();

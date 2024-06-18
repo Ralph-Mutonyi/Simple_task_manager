@@ -91,7 +91,17 @@ app.put('/api/tasks/: id', async (req, res) => {
     }
 })
 // the delete route
-
+app.delete('/api/tasks/:id', async (req, res) =>{
+    try{
+        const deletedTask = await Task.findByIdAndDelete(req.params.id);
+        if(!deletedTask){
+            return res.status(404).json({ message: 'Task not found' });   
+        }
+        res.status(204).end();
+    }catch (error){
+        res.status(500).json({ message: 'Error deleting task' });
+    }
+});
 
 // start listening to the server on its PORT
 app.listen(PORT, () => {

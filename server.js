@@ -1,125 +1,36 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
-const authRouter = require('./routes/auth');
-const Task = require('./models/task');
-const dotenv = require('dotenv');
+require('dotenv').config(); // import the dotenv package
 
-// configure dotenv to use the .env file
-dotenv.config();
+const express = require('express'); // import the express package
+const mongoose = require('mongoose'); // import the mongoose package
+const bodyParser = require('body-parser'); // import the body-parser package
+const cors = require('cors'); // import the cors package
+const path = require('path'); // import the path package
 
-const app = express();
-const PORT = process.env.PORT || 3000; // LISTEN ON THIS PORT
-const JWT_SECRET = process.env.JWT_SECRET; // SECRET KEY
+const authRoutes = require('./routes/auth'); // import the auth routes
+const taskRoutes = require('./routes/tasks'); // import the task routes
 
-app.use(cors());
-app.use(bodyParser.json());
+const app = express(); // create a new express app
 
-// MongoDB connection   
+app.use(cors()); // use the cors middleware
+app.use(bodyParser.json()); // use the body-parser middleware
+app.use(express.static(path.join(__dirname, 'client')));
+
+app.use('/api/auth', authRoutes); // use the auth routes
+app.use('/api', taskRoutes); // use the task routes
+
+const PORT = process.env.PORT || 3000; // set the port
+
+// connect to the database
 mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
+    userNewUrlParser: true,
+    useUnifiedTopology: true
 }).then(() => {
-    console.log('Connected to MongoDB');
-}).catch((error) => {
-    console.error('Error connecting to MongoDB:', error);
-});
-
-
-// middleware to verify JWT
-const autheticateToken = (req, res, next) => {
-    const token = req.header('Authorization');
-    if(!token)return res.status(401).json({ message: 'Access denied' });
-
-    try{
-        const verified = jwt.verify(token, JWT_SECRET);
-        req.user = verified;
-        next();
-    }catch(err) {
-        res.status(400).json({ message: 'Invalid token' });   
-    }
-};
-
-app.use('/api', authRouter);
-
-// Define Task Schema and model
-const taskSchema = new mongoose.Schema({
-    text: { 
-        type: String,
-        required: true
-    },
-    completed: {
-        type: Boolean,
-        default: false
-    },
-    userId: {
-        type: String,
-        required: true
-    },
-});
-
-const Task = mongoose.model('Task', taskSchema);
-
-// The Routes
-// the get route
-
-app.get('/api/tasks', authenticateToken, async (req, res) => {
-    try {
-        const tasks = await Task.find({ userId: req.user.id });
-        res.json(tasks);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching tasks' });
-    }
-});
-
-// the post route
-app.post('/api/tasks', autheticateToken, async (req, res) => {
-    const { text } = req.body;
-    if(!text) {
-        return res.status(400).json({ message: 'Text is required' });
-    }
-    try{
-        const newTask = new Task({ text, userId: req.user.userId });
-        await newTask.save();
-        res.status(201).json(newTask);
-    } catch (error){
-        res.status(500).json({ message: 'Error creating task' });
-    }
-});
-
-// the put route
-app.put('/api/tasks/: id', autheticateToken, async (req, res) => {
-    const { text, completed } = req.body;
-    try {
-        const updatedTask = await Task.findOneAndDelete(
-            { _id: req.params.id, userId: req.user.id },
-            { text, completed },
-            { new: true, runValidators: true }
-        );
-        if (!updatedTask) {
-            return res.status(404).json({ message: 'Task not found' });
-        }
-        res.json(updatedTask);
-    }catch (error) {
-        res.status(500).json({ message: 'Error updating task' });
-    }
+    console.log('Connected to the database');
+    app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+    });
 })
-// the delete route
-app.delete('/api/tasks/:id', autheticateToken, async (req, res) =>{
-    try{
-        const deletedTask = await Task.findOneAndDelete({ _id: req.params.id, userId: req.user.userId });
-        if(!deletedTask){
-            return res.status(404).json({ message: 'Task not found' });   
-        }
-        res.status(204).end();
-    }catch (error){
-        res.status(500).json({ message: 'Error deleting task' });
-    }
+.catch(error => {
+   console.error('Error connecting to MongoDB: ', error);
 });
 
-// start listening to the server on its PORT
-app.listen(PORT, () => {
-    console.log('Sever is running on http://localhost:${PORT}');
-});

@@ -12,4 +12,4 @@ const UserSchema = new mongoose.Schema({  // define the schema for the user mode
     }
 });
 
-model.exports = mongoose.model('User', UserSchema);  // create the model for users and expose it to our app
+module.exports = mongoose.model('User', UserSchema);  // create the model for users and expose it to our app

@@ -58,3 +58,5 @@ async function deleteTask (taskId) {
         alert(`Error: ${data.message}`);
     }
 }
+
+document.addEventListener('DOMContentLoaded', fetchTasks); // Fetch the tasks when the page loads
